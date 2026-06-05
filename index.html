@@ -154,6 +154,13 @@
     background: var(--border);
     border-top: 1px solid var(--border);
   }
+  /* Uzun-1 va Uzun-2 birinchi ustunda, Kalta-1 va Kalta-2 ikkinchi ustunda */
+  .krom-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border);
+  }
   .krom-btn {
     display: flex;
     align-items: center;
@@ -166,18 +173,6 @@
     -webkit-tap-highlight-color: transparent;
   }
   .krom-btn:active { background: #222535; }
-
-  .krom-icon {
-    width: 36px;
-    height: 20px;
-    position: relative;
-    flex-shrink: 0;
-  }
-  /* SVG panel diagram */
-  .krom-icon svg {
-    width: 100%;
-    height: 100%;
-  }
 
   .krom-info { flex: 1; min-width: 0; }
   .krom-name {
@@ -210,6 +205,15 @@
     background: var(--accent);
     border-color: var(--accent);
   }
+  .krom-btn.selected {
+    background: rgba(79, 142, 247, 0.12);
+  }
+  .krom-btn.selected .krom-name {
+    color: var(--accent);
+  }
+  .krom-btn.selected .krom-type-label {
+    color: var(--accent);
+  }
   .krom-btn.selected .krom-check::after {
     content: '';
     width: 5px;
@@ -218,6 +222,15 @@
     border-top: none;
     border-left: none;
     transform: rotate(45deg) translateY(-1px);
+  }
+  .krom-btn.t2.selected {
+    background: rgba(247, 79, 122, 0.12);
+  }
+  .krom-btn.t2.selected .krom-name {
+    color: var(--accent2);
+  }
+  .krom-btn.t2.selected .krom-type-label {
+    color: var(--accent2);
   }
   .krom-btn.t2.selected .krom-check {
     background: var(--accent2);
@@ -292,11 +305,13 @@ tg.expand();
 // ── Ma'lumot olish ──
 let details = [];
 try {
-  const raw = tg.initDataUnsafe?.start_param || '';
-  if (raw) details = JSON.parse(decodeURIComponent(atob(raw)));
+  // 1. URL parametrdan o'qi
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get('data');
+  if (raw) details = JSON.parse(atob(raw));
 } catch(e) {}
 
-// Test uchun (GitHub Pages da ochilganda)
+// 2. Test uchun (bo'sh bo'lsa)
 if (!details.length) {
   details = [
     {uzun:250, keng:60, son:6},
@@ -308,30 +323,20 @@ if (!details.length) {
   ];
 }
 
-// Holat: har detal uchun {uzun1, uzun2, keng1, keng2} — null | 't1' | 't2'
-const state = details.map(() => ({uzun1:null, uzun2:null, keng1:null, keng2:null}));
+// Holat: har detal uchun uzun1/uzun2/kalta1/kalta2
 
-// Tomonlar konfiguratsiyasi
-const SIDES = [
-  { key:'keng1', name:'Yuqori',  pos:'top'    },
-  { key:'keng2', name:'Pastki',  pos:'bottom' },
-  { key:'uzun1', name:'Chap',    pos:'left'   },
-  { key:'uzun2', name:'O\'ng',   pos:'right'  },
+// Tomonlar konfiguratsiyasi — chap ustun: uzun, o'ng ustun: kalta
+const SIDES_LEFT  = [
+  { key:'uzun1', name:'Uzun-1' },
+  { key:'uzun2', name:'Uzun-2' },
+];
+const SIDES_RIGHT = [
+  { key:'kalta1', name:'Kalta-1' },
+  { key:'kalta2', name:'Kalta-2' },
 ];
 
-function panelSVG(pos, active, type) {
-  const color = active ? (type==='t2' ? '#f74f7a' : '#4f8ef7') : '#2a2d3a';
-  const rects = {
-    top:    `<rect x="2" y="0" width="32" height="4" rx="1" fill="${active&&pos==='top'?color:'#2a2d3a'}"/>`,
-    bottom: `<rect x="2" y="16" width="32" height="4" rx="1" fill="${active&&pos==='bottom'?color:'#2a2d3a'}"/>`,
-    left:   `<rect x="0" y="4" width="4" height="12" rx="1" fill="${active&&pos==='left'?color:'#2a2d3a'}"/>`,
-    right:  `<rect x="32" y="4" width="4" height="12" rx="1" fill="${active&&pos==='right'?color:'#2a2d3a'}"/>`,
-  };
-  return `<svg viewBox="0 0 36 20" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="4" width="28" height="12" rx="2" fill="#1a1d27" stroke="#3a3d4a" stroke-width="1"/>
-    ${rects.top}${rects.bottom}${rects.left}${rects.right}
-  </svg>`;
-}
+// state kalitlarini yangilaymiz
+const makeState = () => ({uzun1:null, uzun2:null, kalta1:null, kalta2:null});
 
 function render() {
   const list = document.getElementById('list');
@@ -344,20 +349,27 @@ function render() {
     const s = state[i];
     const hasAny = Object.values(s).some(v => v !== null);
 
-    const btns = SIDES.map(side => {
-      const val  = s[side.key];
+    const makeBtn = (side) => {
+      const val   = s[side.key];
       const isSel = val !== null;
       const isT2  = val === 't2';
       const cls   = `krom-btn${isSel?' selected':''}${isT2?' t2':''}`;
-      return `<div class="${cls}" onclick="toggle(${i},'${side.key}',this)">
-        <div class="krom-icon">${panelSVG(side.pos, isSel, val)}</div>
+
+      const tip1val = document.getElementById('tip1')?.value.trim() || 'Tip 1';
+      const tip2val = document.getElementById('tip2')?.value.trim() || 'Tip 2';
+      const typeLabel = isSel ? (isT2 ? (tip2val || 'Tip 2') : (tip1val || 'Tip 1')) : (isT2 ? 'Tip 2' : 'Tip 1');
+
+      return `<div class="${cls}" onclick="toggle(${i},'${side.key}')">
         <div class="krom-info">
           <div class="krom-name">${side.name}</div>
-          <div class="krom-type-label">${isSel ? (isT2?'Tip 2':'Tip 1') : '—'}</div>
+          <div class="krom-type-label">${isSel ? typeLabel : '—'}</div>
         </div>
         <div class="krom-check"></div>
       </div>`;
-    }).join('');
+    };
+
+    const leftCol  = SIDES_LEFT.map(makeBtn).join('');
+    const rightCol = SIDES_RIGHT.map(makeBtn).join('');
 
     return `<div class="detail-card${hasAny?' has-kromka':''}" id="card-${i}">
       <div class="detail-top">
@@ -365,14 +377,16 @@ function render() {
         <span class="detail-dim">${d.uzun}<span>×</span>${d.keng}<span>×</span>${d.son}</span>
         <span class="kromka-badge">K</span>
       </div>
-      <div class="kromka-grid" id="grid-${i}">${btns}</div>
+      <div class="kromka-grid" id="grid-${i}">
+        <div class="krom-col">${leftCol}</div>
+        <div class="krom-col">${rightCol}</div>
+      </div>
     </div>`;
   }).join('');
 }
 
-function toggle(i, key, btn) {
+function toggle(i, key) {
   const cur = state[i][key];
-  // null → t1 → t2 → null
   if (cur === null)      state[i][key] = 't1';
   else if (cur === 't1') state[i][key] = 't2';
   else                   state[i][key] = null;
@@ -387,10 +401,10 @@ function submit() {
     const s = state[i];
     return {
       uzun: d.uzun, keng: d.keng, son: d.son,
-      uzun1: s.uzun1 ? (s.uzun1==='t1' ? tip1 : tip2) : '',
-      uzun2: s.uzun2 ? (s.uzun2==='t1' ? tip1 : tip2) : '',
-      keng1: s.keng1 ? (s.keng1==='t1' ? tip1 : tip2) : '',
-      keng2: s.keng2 ? (s.keng2==='t1' ? tip1 : tip2) : '',
+      uzun1:  s.uzun1  ? (s.uzun1 ==='t1' ? tip1 : tip2) : '',
+      uzun2:  s.uzun2  ? (s.uzun2 ==='t1' ? tip1 : tip2) : '',
+      keng1:  s.kalta1 ? (s.kalta1==='t1' ? tip1 : tip2) : '',
+      keng2:  s.kalta2 ? (s.kalta2==='t1' ? tip1 : tip2) : '',
     };
   });
 
@@ -398,7 +412,12 @@ function submit() {
   tg.close();
 }
 
+const state = details.map(() => makeState());
 render();
+
+// Tip matni o'zgarganda ro'yhatni yangilasin
+document.getElementById('tip1').addEventListener('input', render);
+document.getElementById('tip2').addEventListener('input', render);
 </script>
 </body>
 </html>
