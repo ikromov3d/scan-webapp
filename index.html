@@ -462,7 +462,12 @@ function submit() {
   });
 
   const payload = JSON.stringify({tip1, tip2, details: result});
-  tg.sendData(payload);
+  try {
+    tg.sendData(payload);
+  } catch(e) {
+    console.error('sendData error:', e);
+  }
+  tg.close();
 }
 
 render();
