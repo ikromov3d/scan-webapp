@@ -305,13 +305,11 @@ tg.expand();
 // ── Ma'lumot olish ──
 let details = [];
 try {
-  // 1. URL parametrdan o'qi
   const params = new URLSearchParams(window.location.search);
   const raw = params.get('data');
   if (raw) details = JSON.parse(atob(raw));
 } catch(e) {}
 
-// 2. Test uchun (bo'sh bo'lsa)
 if (!details.length) {
   details = [
     {uzun:250, keng:60, son:6},
@@ -323,20 +321,49 @@ if (!details.length) {
   ];
 }
 
-// Holat: har detal uchun uzun1/uzun2/kalta1/kalta2
-
-// Tomonlar konfiguratsiyasi — chap ustun: uzun, o'ng ustun: kalta
 const SIDES_LEFT  = [
-  { key:'uzun1', name:'Uzun-1' },
-  { key:'uzun2', name:'Uzun-2' },
+  { key:'uzun1',  name:'Uzun-1'  },
+  { key:'uzun2',  name:'Uzun-2'  },
 ];
 const SIDES_RIGHT = [
   { key:'kalta1', name:'Kalta-1' },
   { key:'kalta2', name:'Kalta-2' },
 ];
 
-// state kalitlarini yangilaymiz
 const makeState = () => ({uzun1:null, uzun2:null, kalta1:null, kalta2:null});
+
+// Tip inputlarni URL dagi mavjud qiymatlardan tiklash
+function restoreTips() {
+  const vals = [];
+  for (const d of details) {
+    for (const k of ['uzun1','uzun2','keng1','keng2']) {
+      if (d[k] && !vals.includes(d[k])) vals.push(d[k]);
+    }
+  }
+  if (vals[0]) document.getElementById('tip1').value = vals[0];
+  if (vals[1]) document.getElementById('tip2').value = vals[1];
+}
+
+// Holat va teksturani URL dagi kromka ma'lumotidan tiklash
+function restoreState(d) {
+  const s = makeState();
+  const tip1v = document.getElementById('tip1').value.trim();
+  const tip2v = document.getElementById('tip2').value.trim();
+  const toKey = (val) => {
+    if (!val) return null;
+    if (tip2v && val === tip2v) return 't2';
+    return 't1';
+  };
+  s.uzun1  = toKey(d.uzun1);
+  s.uzun2  = toKey(d.uzun2);
+  s.kalta1 = toKey(d.keng1);
+  s.kalta2 = toKey(d.keng2);
+  return s;
+}
+
+restoreTips();
+const state   = details.map(d => restoreState(d));
+const texture = details.map(d => d.txt ? true : false);
 
 function render() {
   const list = document.getElementById('list');
@@ -345,8 +372,12 @@ function render() {
     return;
   }
 
+  const tip1val = document.getElementById('tip1').value.trim() || 'Tip 1';
+  const tip2val = document.getElementById('tip2').value.trim() || 'Tip 2';
+
   list.innerHTML = details.map((d, i) => {
-    const s = state[i];
+    const s      = state[i];
+    const hasTxt = texture[i];
     const hasAny = Object.values(s).some(v => v !== null);
 
     const makeBtn = (side) => {
@@ -354,15 +385,11 @@ function render() {
       const isSel = val !== null;
       const isT2  = val === 't2';
       const cls   = `krom-btn${isSel?' selected':''}${isT2?' t2':''}`;
-
-      const tip1val = document.getElementById('tip1')?.value.trim() || 'Tip 1';
-      const tip2val = document.getElementById('tip2')?.value.trim() || 'Tip 2';
-      const typeLabel = isSel ? (isT2 ? (tip2val || 'Tip 2') : (tip1val || 'Tip 1')) : (isT2 ? 'Tip 2' : 'Tip 1');
-
+      const label = isSel ? (isT2 ? tip2val : tip1val) : '—';
       return `<div class="${cls}" onclick="toggle(${i},'${side.key}')">
         <div class="krom-info">
           <div class="krom-name">${side.name}</div>
-          <div class="krom-type-label">${isSel ? typeLabel : '—'}</div>
+          <div class="krom-type-label">${label}</div>
         </div>
         <div class="krom-check"></div>
       </div>`;
@@ -371,15 +398,24 @@ function render() {
     const leftCol  = SIDES_LEFT.map(makeBtn).join('');
     const rightCol = SIDES_RIGHT.map(makeBtn).join('');
 
-    return `<div class="detail-card${hasAny?' has-kromka':''}" id="card-${i}">
+    const txtBtn = `<div class="krom-btn${hasTxt?' selected':''}" style="grid-column:1/-1;border-top:1px solid var(--border)" onclick="toggleTxt(${i})">
+      <div class="krom-info">
+        <div class="krom-name">🌲 Tekstura (yo'nalish)</div>
+        <div class="krom-type-label">${hasTxt ? 'Yoqilgan — burilmaydi' : 'O\'chiq — burilishi mumkin'}</div>
+      </div>
+      <div class="krom-check"></div>
+    </div>`;
+
+    return `<div class="detail-card${hasAny||hasTxt?' has-kromka':''}" id="card-${i}">
       <div class="detail-top">
         <span class="detail-num">${i+1}.</span>
         <span class="detail-dim">${d.uzun}<span>×</span>${d.keng}<span>×</span>${d.son}</span>
-        <span class="kromka-badge">K</span>
+        <span class="kromka-badge">${hasTxt?'🌲':'K'}</span>
       </div>
       <div class="kromka-grid" id="grid-${i}">
         <div class="krom-col">${leftCol}</div>
         <div class="krom-col">${rightCol}</div>
+        ${txtBtn}
       </div>
     </div>`;
   }).join('');
@@ -393,6 +429,11 @@ function toggle(i, key) {
   render();
 }
 
+function toggleTxt(i) {
+  texture[i] = !texture[i];
+  render();
+}
+
 function submit() {
   const tip1 = document.getElementById('tip1').value.trim();
   const tip2 = document.getElementById('tip2').value.trim();
@@ -400,11 +441,14 @@ function submit() {
   const result = details.map((d, i) => {
     const s = state[i];
     return {
-      uzun: d.uzun, keng: d.keng, son: d.son,
-      uzun1:  s.uzun1  ? (s.uzun1 ==='t1' ? tip1 : tip2) : '',
-      uzun2:  s.uzun2  ? (s.uzun2 ==='t1' ? tip1 : tip2) : '',
-      keng1:  s.kalta1 ? (s.kalta1==='t1' ? tip1 : tip2) : '',
-      keng2:  s.kalta2 ? (s.kalta2==='t1' ? tip1 : tip2) : '',
+      uzun:  d.uzun,
+      keng:  d.keng,
+      son:   d.son,
+      txt:   texture[i],
+      uzun1: s.uzun1  ? (s.uzun1 ==='t1' ? tip1 : tip2) : '',
+      uzun2: s.uzun2  ? (s.uzun2 ==='t1' ? tip1 : tip2) : '',
+      keng1: s.kalta1 ? (s.kalta1==='t1' ? tip1 : tip2) : '',
+      keng2: s.kalta2 ? (s.kalta2==='t1' ? tip1 : tip2) : '',
     };
   });
 
@@ -412,10 +456,7 @@ function submit() {
   tg.close();
 }
 
-const state = details.map(() => makeState());
 render();
-
-// Tip matni o'zgarganda ro'yhatni yangilasin
 document.getElementById('tip1').addEventListener('input', render);
 document.getElementById('tip2').addEventListener('input', render);
 </script>
