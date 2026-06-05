@@ -363,7 +363,7 @@ function restoreState(d) {
 
 restoreTips();
 const state   = details.map(d => restoreState(d));
-const texture = details.map(d => d.txt ? true : false);
+const texture = details.map(d => d.txt !== undefined ? d.txt : true);
 
 function render() {
   const list = document.getElementById('list');
