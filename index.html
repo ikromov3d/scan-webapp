@@ -456,7 +456,15 @@ function submit() {
     };
   });
 
-  tg.sendData(JSON.stringify({tip1, tip2, details: result}));
+  const payload = JSON.stringify({tip1, tip2, details: result});
+
+  // Avval sendData sinab ko'ramiz
+  try {
+    tg.sendData(payload);
+  } catch(e) {
+    // sendData ishlamasa localStorage ga yozib yopamiz
+    try { localStorage.setItem('kromka_result', payload); } catch(e2) {}
+  }
   tg.close();
 }
 
