@@ -469,6 +469,26 @@ function submit() {
   }
   tg.close();
 }
+function submit() {
+  const tip1 = document.getElementById('tip1').value.trim();
+  const tip2 = document.getElementById('tip2').value.trim();
+
+  const result = details.map((d, i) => {
+    // ... mavjud kod ...
+  });
+
+  const payload = JSON.stringify({tip1, tip2, details: result});
+  
+  // TEST UCHUN:
+  alert("sendData chaqirilmoqda: " + payload.substring(0, 100));
+  
+  try {
+    tg.sendData(payload);
+  } catch(e) {
+    alert("XATO: " + e.message);
+  }
+  tg.close();
+}
 
 render();
 tg.MainButton.show();
