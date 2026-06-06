@@ -439,7 +439,13 @@ function toggleTxt(i) {
 }
 
 function submit() {
-  tg.close();
+  alert("1. sendData chaqirilmoqda...");
+  try {
+    tg.sendData(JSON.stringify({test: "hello"}));
+    alert("2. sendData chaqirildi!");
+  } catch(e) {
+    alert("XATO: " + e.message);
+  }
 }
 
 render();
