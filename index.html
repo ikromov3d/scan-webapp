@@ -439,7 +439,7 @@ function toggleTxt(i) {
 }
 
 const BOT_USERNAME = "sarkroybot";
-const FLASK_API    = "https://reversal-animator-curtain.ngrok-free.dev"; // ngrok URL bilan almashtiriladi
+const FLASK_API    = "http://localhost:5000"; // ngrok URL bilan almashtiriladi
 
 // MainButton sozlash
 tg.MainButton.setText('✅ Tasdiqlash');
@@ -461,37 +461,15 @@ async function submit() {
     };
   });
 
-  const user_id = tg.initDataUnsafe?.user?.id;
-  if (!user_id) {
-    alert("❌ Telegram user ID topilmadi!");
-    return;
-  }
+  const payload = JSON.stringify({tip1, tip2, details: result});
 
-  tg.MainButton.showProgress(true);
-
+  // sendData ni sinash
   try {
-    // Flask API ga saqlash
-    const resp = await fetch(FLASK_API + "/api/kromka", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "ngrok-skip-browser-warning": "true"
-      },
-      body: JSON.stringify({user_id, tip1, tip2, details: result})
-    });
-
-    if (!resp.ok) throw new Error("API xato");
-
-    // Bot ga xabar yuborish (sendData orqali)
-    tg.sendData(JSON.stringify({action: "kromka_saved", user_id}));
-
+    tg.sendData(payload);
+    // Agar yetib kelsa bot log da ko'rinadi
   } catch(e) {
-    tg.MainButton.hideProgress();
-    alert("❌ Xatolik: " + e.message);
-    return;
+    alert("sendData xato: " + e.message);
   }
-
-  tg.close();
 }
 
 render();
