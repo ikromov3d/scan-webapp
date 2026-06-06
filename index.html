@@ -439,13 +439,21 @@ function toggleTxt(i) {
 }
 
 function sendKromka() {
-  alert("1. sendData chaqirilmoqda...");
-  try {
-    tg.sendData(JSON.stringify({test: "hello"}));
-    alert("2. sendData chaqirildi!");
-  } catch(e) {
-    alert("XATO: " + e.message);
-  }
+  const tip1 = document.getElementById('tip1').value.trim();
+  const tip2 = document.getElementById('tip2').value.trim();
+
+  const result = details.map((d, i) => {
+    const s = state[i];
+    return {
+      uzun:  d.uzun, keng: d.keng, son: d.son, txt: texture[i],
+      uzun1: s.uzun1  ? (s.uzun1 ==='t1' ? tip1 : tip2) : '',
+      uzun2: s.uzun2  ? (s.uzun2 ==='t1' ? tip1 : tip2) : '',
+      keng1: s.kalta1 ? (s.kalta1==='t1' ? tip1 : tip2) : '',
+      keng2: s.kalta2 ? (s.kalta2==='t1' ? tip1 : tip2) : '',
+    };
+  });
+
+  tg.sendData(JSON.stringify({tip1, tip2, details: result}));
 }
 
 render();
