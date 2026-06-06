@@ -293,8 +293,8 @@
   <div id="list"></div>
 </div>
 
-<div class="bottom-bar" style="display:none">
-  <button class="submit-btn">✅ Tasdiqlash</button>
+<div class="bottom-bar">
+  <button class="submit-btn" onclick="submit()">✅ Tasdiqlash</button>
 </div>
 
 <script>
@@ -438,15 +438,7 @@ function toggleTxt(i) {
   render();
 }
 
-const BOT_USERNAME = "sarkroybot";
-const FLASK_API    = "http://localhost:5000"; // ngrok URL bilan almashtiriladi
-
-// MainButton sozlash
-tg.MainButton.setText('✅ Tasdiqlash');
-tg.MainButton.color = '#4f8ef7';
-tg.MainButton.onClick(submit);
-
-async function submit() {
+function submit() {
   const tip1 = document.getElementById('tip1').value.trim();
   const tip2 = document.getElementById('tip2').value.trim();
 
@@ -461,19 +453,10 @@ async function submit() {
     };
   });
 
-  const payload = JSON.stringify({tip1, tip2, details: result});
-
-  // sendData ni sinash
-  try {
-    tg.sendData(payload);
-  } catch(e) {
-    console.log("sendData xato:", e);
-  }
-  tg.close();
+  tg.sendData(JSON.stringify({tip1, tip2, details: result}));
 }
 
 render();
-tg.MainButton.show();
 document.getElementById('tip1').addEventListener('input', render);
 document.getElementById('tip2').addEventListener('input', render);
 </script>
