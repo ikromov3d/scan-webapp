@@ -453,7 +453,23 @@ function sendKromka() {
     };
   });
 
-  tg.sendData(JSON.stringify({tip1, tip2, details: result}));
+  const payload = {tip1, tip2, details: result};
+
+  // InlineKeyboardButton WebApp: sendData() ISHLAMAYDI.
+  // Ma'lumotni base64 ga o'rab deep link orqali botga yuboramiz.
+  try {
+    const encoded   = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+    const param     = 'kromka_' + encoded;
+    // Bot username ni URL parametrdan olish (bot.py WEBAPP_URL ga ?bot=... qo'shishi kerak)
+    const urlParams = new URLSearchParams(window.location.search);
+    const botName   = urlParams.get('bot') || tg.initDataUnsafe?.bot?.username || '';
+    if (botName) {
+      tg.openTelegramLink('https://t.me/' + botName + '?start=' + param);
+    }
+  } catch(e) {
+    console.error('sendKromka xato:', e);
+  }
+  tg.close();
 }
 
 render();
