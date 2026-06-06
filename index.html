@@ -466,10 +466,10 @@ async function submit() {
   // sendData ni sinash
   try {
     tg.sendData(payload);
-    // Agar yetib kelsa bot log da ko'rinadi
   } catch(e) {
-    alert("sendData xato: " + e.message);
+    console.log("sendData xato:", e);
   }
+  tg.close();
 }
 
 render();
