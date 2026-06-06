@@ -294,7 +294,7 @@
 </div>
 
 <div class="bottom-bar">
-  <button class="submit-btn" onclick="submit()">✅ Tasdiqlash</button>
+  <button class="submit-btn" onclick="sendKromka()">✅ Tasdiqlash</button>
 </div>
 
 <script>
@@ -438,7 +438,7 @@ function toggleTxt(i) {
   render();
 }
 
-function submit() {
+function sendKromka() {
   alert("1. sendData chaqirilmoqda...");
   try {
     tg.sendData(JSON.stringify({test: "hello"}));
