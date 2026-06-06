@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Kromka belgilash</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:       #0f1117;
+    --card:     #1a1d27;
+    --border:   #2a2d3a;
+    --accent:   #4f8ef7;
+    --accent2:  #f74f7a;
+    --text:     #e8eaf0;
+    --sub:      #7b7f8e;
+    --checked:  #4f8ef7;
+    --radius:   12px;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'SF Pro Display', -apple-system, sans-serif;
+    min-height: 100vh;
+    padding-bottom: 90px;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .header h1 {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .header p {
+    font-size: 12px;
+    color: var(--sub);
+    margin-top: 2px;
+  }
+
+  /* ── KROMKA TYPES ── */
+  .types-section {
+    padding: 14px 16px 0;
+  }
+  .types-section h2 {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--sub);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+  }
+  .type-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    align-items: center;
+  }
+  .type-label {
+    font-size: 13px;
+    color: var(--sub);
+    width: 36px;
+    flex-shrink: 0;
+  }
+  .type-input {
+    flex: 1;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    padding: 9px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .type-input:focus {
+    border-color: var(--accent);
+  }
+  .type-input::placeholder { color: var(--sub); }
+
+  /* ── DETAILS LIST ── */
+  .list-section {
+    padding: 14px 16px 0;
+  }
+  .list-section h2 {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--sub);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+  }
+
+  .detail-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin-bottom: 10px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+  .detail-card.has-kromka {
+    border-color: var(--accent);
+  }
+
+  .detail-top {
+    display: flex;
+    align-items: center;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .detail-num {
+    font-size: 12px;
+    color: var(--sub);
+    width: 22px;
+    flex-shrink: 0;
+  }
+  .detail-dim {
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    flex: 1;
+  }
+  .detail-dim span {
+    color: var(--sub);
+    font-weight: 400;
+  }
+  .kromka-badge {
+    font-size: 11px;
+    background: var(--accent);
+    color: #fff;
+    border-radius: 6px;
+    padding: 2px 7px;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .detail-card.has-kromka .kromka-badge { opacity: 1; }
+
+  /* ── CHECKBOX GRID ── */
+  .kromka-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border-top: 1px solid var(--border);
+  }
+  /* Uzun-1 va Uzun-2 birinchi ustunda, Kalta-1 va Kalta-2 ikkinchi ustunda */
+  .krom-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border);
+  }
+  .krom-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--card);
+    cursor: pointer;
+    transition: background 0.15s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .krom-btn:active { background: #222535; }
+
+  .krom-info { flex: 1; min-width: 0; }
+  .krom-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .krom-type-label {
+    font-size: 10px;
+    color: var(--sub);
+    margin-top: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .krom-check {
+    width: 20px;
+    height: 20px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    background: transparent;
+    flex-shrink: 0;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .krom-btn.selected .krom-check {
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .krom-btn.selected {
+    background: rgba(79, 142, 247, 0.12);
+  }
+  .krom-btn.selected .krom-name {
+    color: var(--accent);
+  }
+  .krom-btn.selected .krom-type-label {
+    color: var(--accent);
+  }
+  .krom-btn.selected .krom-check::after {
+    content: '';
+    width: 5px;
+    height: 9px;
+    border: 2px solid #fff;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg) translateY(-1px);
+  }
+  .krom-btn.t2.selected {
+    background: rgba(247, 79, 122, 0.12);
+  }
+  .krom-btn.t2.selected .krom-name {
+    color: var(--accent2);
+  }
+  .krom-btn.t2.selected .krom-type-label {
+    color: var(--accent2);
+  }
+  .krom-btn.t2.selected .krom-check {
+    background: var(--accent2);
+    border-color: var(--accent2);
+  }
+
+  /* ── BOTTOM BAR ── */
+  .bottom-bar {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--card);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+  .submit-btn {
+    width: 100%;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    padding: 14px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    letter-spacing: -0.2px;
+  }
+  .submit-btn:active { opacity: 0.85; transform: scale(0.99); }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--sub);
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎨 Kromka belgilash</h1>
+  <p>Har bir detal uchun kromka tomonini tanlang</p>
+</div>
+
+<div class="types-section">
+  <h2>Kromka turlari</h2>
+  <div class="type-row">
+    <span class="type-label" style="color:#4f8ef7">Tip 1</span>
+    <input class="type-input" id="tip1" placeholder="masalan: 1 o'zidan" />
+  </div>
+  <div class="type-row">
+    <span class="type-label" style="color:#f74f7a">Tip 2</span>
+    <input class="type-input" id="tip2" placeholder="masalan: 0.4 o'zidan" />
+  </div>
+</div>
+
+<div class="list-section">
+  <h2>Detallar</h2>
+  <div id="list"></div>
+</div>
+
+<div class="bottom-bar">
+  <button class="submit-btn" onclick="submit()">✅ Tasdiqlash</button>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+// ── Ma'lumot olish ──
+let details = [];
+try {
+  const params = new URLSearchParams(window.location.search);
+  const raw = params.get('data');
+  if (raw) details = JSON.parse(atob(raw));
+} catch(e) {}
+
+if (!details.length) {
+  details = [
+    {uzun:250, keng:60, son:6},
+    {uzun:868, keng:60, son:6},
+    {uzun:868, keng:50, son:2},
+    {uzun:868, keng:10, son:6},
+    {uzun:236, keng:60, son:1},
+    {uzun:425, keng:50, son:8},
+  ];
+}
+
+const SIDES_LEFT  = [
+  { key:'uzun1',  name:'Uzun-1'  },
+  { key:'uzun2',  name:'Uzun-2'  },
+];
+const SIDES_RIGHT = [
+  { key:'kalta1', name:'Kalta-1' },
+  { key:'kalta2', name:'Kalta-2' },
+];
+
+const makeState = () => ({uzun1:null, uzun2:null, kalta1:null, kalta2:null});
+
+// Tip inputlarni URL dagi mavjud qiymatlardan tiklash
+function restoreTips() {
+  const vals = [];
+  for (const d of details) {
+    for (const k of ['uzun1','uzun2','keng1','keng2']) {
+      if (d[k] && !vals.includes(d[k])) vals.push(d[k]);
+    }
+  }
+  if (vals[0]) document.getElementById('tip1').value = vals[0];
+  if (vals[1]) document.getElementById('tip2').value = vals[1];
+}
+
+// Holat va teksturani URL dagi kromka ma'lumotidan tiklash
+function restoreState(d) {
+  const s = makeState();
+  const tip1v = document.getElementById('tip1').value.trim();
+  const tip2v = document.getElementById('tip2').value.trim();
+  const toKey = (val) => {
+    if (!val) return null;
+    if (tip2v && val === tip2v) return 't2';
+    return 't1';
+  };
+  s.uzun1  = toKey(d.uzun1);
+  s.uzun2  = toKey(d.uzun2);
+  s.kalta1 = toKey(d.keng1);
+  s.kalta2 = toKey(d.keng2);
+  return s;
+}
+
+restoreTips();
+const state   = details.map(d => restoreState(d));
+const texture = details.map(d => {
+  // txt aniq false bo'lsagina false, aks holda doim true
+  if (d.txt === false || d.txt === 0) return false;
+  return true;
+});
+
+function render() {
+  const list = document.getElementById('list');
+  if (!details.length) {
+    list.innerHTML = '<div class="empty-state">Detallar topilmadi</div>';
+    return;
+  }
+
+  const tip1val = document.getElementById('tip1').value.trim() || 'Tip 1';
+  const tip2val = document.getElementById('tip2').value.trim() || 'Tip 2';
+
+  list.innerHTML = details.map((d, i) => {
+    const s      = state[i];
+    const hasTxt = texture[i];
+    const hasAny = Object.values(s).some(v => v !== null);
+
+    const makeBtn = (side) => {
+      const val   = s[side.key];
+      const isSel = val !== null;
+      const isT2  = val === 't2';
+      const cls   = `krom-btn${isSel?' selected':''}${isT2?' t2':''}`;
+      const label = isSel ? (isT2 ? tip2val : tip1val) : '—';
+      return `<div class="${cls}" onclick="toggle(${i},'${side.key}')">
+        <div class="krom-info">
+          <div class="krom-name">${side.name}</div>
+          <div class="krom-type-label">${label}</div>
+        </div>
+        <div class="krom-check"></div>
+      </div>`;
+    };
+
+    const leftCol  = SIDES_LEFT.map(makeBtn).join('');
+    const rightCol = SIDES_RIGHT.map(makeBtn).join('');
+
+    const txtBtn = `<div class="krom-btn${hasTxt?' selected':''}" style="grid-column:1/-1;border-top:1px solid var(--border)" onclick="toggleTxt(${i})">
+      <div class="krom-info">
+        <div class="krom-name">🌲 Tekstura (yo'nalish)</div>
+        <div class="krom-type-label">${hasTxt ? 'Yoqilgan — burilmaydi' : 'O\'chiq — burilishi mumkin'}</div>
+      </div>
+      <div class="krom-check"></div>
+    </div>`;
+
+    return `<div class="detail-card${hasAny||hasTxt?' has-kromka':''}" id="card-${i}">
+      <div class="detail-top">
+        <span class="detail-num">${i+1}.</span>
+        <span class="detail-dim">${d.uzun}<span>×</span>${d.keng}<span>×</span>${d.son}</span>
+        <span class="kromka-badge">${hasTxt?'🌲':'K'}</span>
+      </div>
+      <div class="kromka-grid" id="grid-${i}">
+        <div class="krom-col">${leftCol}</div>
+        <div class="krom-col">${rightCol}</div>
+        ${txtBtn}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggle(i, key) {
+  const cur = state[i][key];
+  if (cur === null)      state[i][key] = 't1';
+  else if (cur === 't1') state[i][key] = 't2';
+  else                   state[i][key] = null;
+  render();
+}
+
+function toggleTxt(i) {
+  texture[i] = !texture[i];
+  render();
+}
+
+function submit() {
+  tg.close();
+}
+
+render();
+document.getElementById('tip1').addEventListener('input', render);
+document.getElementById('tip2').addEventListener('input', render);
+</script>
+</body>
+</html>
