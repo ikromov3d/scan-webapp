@@ -473,7 +473,10 @@ async function submit() {
     // Flask API ga saqlash
     const resp = await fetch(FLASK_API + "/api/kromka", {
       method: "POST",
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "ngrok-skip-browser-warning": "true"
+      },
       body: JSON.stringify({user_id, tip1, tip2, details: result})
     });
 
