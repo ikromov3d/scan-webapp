@@ -438,24 +438,22 @@ function toggleTxt(i) {
   render();
 }
 
-const BOT_USERNAME = "sarkroybot"; // bot username
+const BOT_USERNAME = "sarkroybot";
+const FLASK_API    = "http://localhost:5000"; // ngrok URL bilan almashtiriladi
 
 // MainButton sozlash
 tg.MainButton.setText('✅ Tasdiqlash');
 tg.MainButton.color = '#4f8ef7';
 tg.MainButton.onClick(submit);
 
-function submit() {
+async function submit() {
   const tip1 = document.getElementById('tip1').value.trim();
   const tip2 = document.getElementById('tip2').value.trim();
 
   const result = details.map((d, i) => {
     const s = state[i];
     return {
-      uzun:  d.uzun,
-      keng:  d.keng,
-      son:   d.son,
-      txt:   texture[i],
+      uzun:  d.uzun, keng: d.keng, son: d.son, txt: texture[i],
       uzun1: s.uzun1  ? (s.uzun1 ==='t1' ? tip1 : tip2) : '',
       uzun2: s.uzun2  ? (s.uzun2 ==='t1' ? tip1 : tip2) : '',
       keng1: s.kalta1 ? (s.kalta1==='t1' ? tip1 : tip2) : '',
@@ -463,22 +461,33 @@ function submit() {
     };
   });
 
-  try {
-    // 1. sendData orqali yuborish (ishlamasa deep link ishlatiladi)
-    const payload = JSON.stringify({tip1, tip2, details: result});
-    tg.sendData(payload);
-  } catch(e) {
-    // 2. Deep link orqali yuborish
-    try {
-      const payload   = JSON.stringify({tip1, tip2, details: result});
-      const encoded   = btoa(unescape(encodeURIComponent(payload)))
-        .replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
-      const deeplink  = "https://t.me/" + BOT_USERNAME + "?start=kromka_" + encoded;
-      tg.openTelegramLink(deeplink);
-    } catch(e2) {
-      console.error('Deep link error:', e2);
-    }
+  const user_id = tg.initDataUnsafe?.user?.id;
+  if (!user_id) {
+    alert("❌ Telegram user ID topilmadi!");
+    return;
   }
+
+  tg.MainButton.showProgress(true);
+
+  try {
+    // Flask API ga saqlash
+    const resp = await fetch(FLASK_API + "/api/kromka", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({user_id, tip1, tip2, details: result})
+    });
+
+    if (!resp.ok) throw new Error("API xato");
+
+    // Bot ga xabar yuborish (sendData orqali)
+    tg.sendData(JSON.stringify({action: "kromka_saved", user_id}));
+
+  } catch(e) {
+    tg.MainButton.hideProgress();
+    alert("❌ Xatolik: " + e.message);
+    return;
+  }
+
   tg.close();
 }
 
