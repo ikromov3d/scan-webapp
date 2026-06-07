@@ -428,6 +428,13 @@ function sendKromka() {
   const tip1 = document.getElementById('tip1').value.trim();
   const tip2 = document.getElementById('tip2').value.trim();
 
+  if (!tip1) {
+    document.getElementById('tip1').focus();
+    document.getElementById('tip1').style.borderColor = 'var(--accent2)';
+    setTimeout(() => document.getElementById('tip1').style.borderColor = '', 1500);
+    return;
+  }
+
   const result = details.map((d, i) => {
     const s = state[i];
     return {
