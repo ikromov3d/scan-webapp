@@ -332,19 +332,14 @@ const SIDES_RIGHT = [
 
 const makeState = () => ({uzun1:null, uzun2:null, kalta1:null, kalta2:null});
 
-// Tip inputlarni URL dagi mavjud qiymatlardan tiklash
+// Tip inputlarni URL dagi tip1/tip2 parametrlardan tiklash
 function restoreTips() {
-  // Barcha unique qiymatlarni to'playmiz
-  const vals = [];
-  for (const d of details) {
-    for (const k of ['uzun1','uzun2','keng1','keng2']) {
-      if (d[k] && !vals.includes(d[k])) vals.push(d[k]);
-    }
-  }
-  // vals[0] = tip1, vals[1] = tip2 (agar mavjud bo'lsa)
-  if (vals[0]) document.getElementById('tip1').value = vals[0];
-  if (vals[1]) document.getElementById('tip2').value = vals[1];
-  return { tip1: vals[0] || '', tip2: vals[1] || '' };
+  const params = new URLSearchParams(window.location.search);
+  const t1 = params.get('tip1') || '';
+  const t2 = params.get('tip2') || '';
+  if (t1) document.getElementById('tip1').value = t1;
+  if (t2) document.getElementById('tip2').value = t2;
+  return { tip1: t1, tip2: t2 };
 }
 
 // Holat va teksturani URL dagi kromka ma'lumotidan tiklash
@@ -428,25 +423,25 @@ function sendKromka() {
   const tip1 = document.getElementById('tip1').value.trim();
   const tip2 = document.getElementById('tip2').value.trim();
 
-  if (!tip1) {
-    document.getElementById('tip1').focus();
-    document.getElementById('tip1').style.borderColor = 'var(--accent2)';
-    setTimeout(() => document.getElementById('tip1').style.borderColor = '', 1500);
-    return;
-  }
+  // Belgilangan tomonlar bor-yo'qligini tekshiramiz
+  const anySelected = state.some(s => Object.values(s).some(v => v !== null));
+
+  // Tip nomi bo'sh bo'lsa default qo'yamiz (faqat belgilangan bo'lsa)
+  const t1 = tip1 || (anySelected ? 'kromka1' : '');
+  const t2 = tip2 || (anySelected ? 'kromka2' : '');
 
   const result = details.map((d, i) => {
     const s = state[i];
     return {
       uzun:  d.uzun, keng: d.keng, son: d.son, txt: true,
-      uzun1: s.uzun1  ? (s.uzun1 ==='t1' ? tip1 : tip2) : '',
-      uzun2: s.uzun2  ? (s.uzun2 ==='t1' ? tip1 : tip2) : '',
-      keng1: s.kalta1 ? (s.kalta1==='t1' ? tip1 : tip2) : '',
-      keng2: s.kalta2 ? (s.kalta2==='t1' ? tip1 : tip2) : '',
+      uzun1: s.uzun1  ? (s.uzun1 ==='t1' ? t1 : t2) : '',
+      uzun2: s.uzun2  ? (s.uzun2 ==='t1' ? t1 : t2) : '',
+      keng1: s.kalta1 ? (s.kalta1==='t1' ? t1 : t2) : '',
+      keng2: s.kalta2 ? (s.kalta2==='t1' ? t1 : t2) : '',
     };
   });
 
-  tg.sendData(JSON.stringify({tip1, tip2, details: result}));
+  tg.sendData(JSON.stringify({tip1: t1, tip2: t2, details: result}));
 }
 
 render();
